@@ -1,0 +1,720 @@
+using System;
+using System.IO;
+using System.Collections.Generic;
+using System.Runtime.Serialization.Formatters.Binary;
+
+class Database { // Osama
+    public List<Customer> customers = new List<Customer> ();
+    public List<Hotel> hotels = new List<Hotel> ();
+    public List<Booking> bookings = new List<Booking> ();
+
+    public void LoadCustomers() {
+        customers.Clear();
+
+        FileStream f = new FileStream("customers.txt", FileMode.Open, FileAccess.Read);
+        BinaryFormatter bf = new BinaryFormatter();
+        
+        while (f.Position < f.Length) {
+            Customer tmp = (Customer)bf.Deserialize(f);
+            customers.Add(tmp);
+        }
+
+        f.Close();
+    }
+
+    public void StoreCustomers() {
+        FileStream f = new FileStream("customers.txt", FileMode.Create, FileAccess.Write);
+        BinaryFormatter bf = new BinaryFormatter();
+        
+        foreach (Customer c in customers) {
+            bf.Serialize(f, c);
+        }
+
+        f.Close();
+    }
+
+    public void LoadHotels() {
+        hotels.Clear();
+
+        FileStream f = new FileStream("hotels.txt", FileMode.Open, FileAccess.Read);
+        BinaryFormatter bf = new BinaryFormatter();
+        
+        while (f.Position < f.Length) {
+            hotels.Add((Hotel)bf.Deserialize(f));
+        }
+
+        f.Close();        
+    }
+
+    public void StoreHotels() {
+        FileStream f = new FileStream("hotels.txt", FileMode.Create, FileAccess.Write);
+        BinaryFormatter bf = new BinaryFormatter();
+        
+        foreach (Hotel h in hotels) {
+            bf.Serialize(f, h);
+        }
+
+        f.Close();
+    }
+
+    public void LoadBookings() {
+        bookings.Clear();
+
+        FileStream f = new FileStream("bookings.txt", FileMode.Open, FileAccess.Read);
+        BinaryFormatter bf = new BinaryFormatter();
+        
+        while (f.Position < f.Length) {
+            bookings.Add((Booking)bf.Deserialize(f));
+        }
+
+        f.Close();
+    }
+
+    public void StoreBookings() {
+        FileStream f = new FileStream("bookings.txt", FileMode.Create, FileAccess.Write);
+        BinaryFormatter bf = new BinaryFormatter();
+        
+        foreach (Booking b in bookings) {
+            bf.Serialize(f, b);
+        }
+
+        f.Close();        
+    }
+
+    public void LoadAll() {
+        LoadCustomers();
+        LoadHotels();
+        LoadBookings();
+    }
+
+    public void StoreAll() {
+        StoreCustomers();
+        StoreHotels();
+        StoreBookings();
+    }
+}
+
+
+class Admin { // Osama and Malak
+	string name;
+    string password;
+
+    bool Valid(double x) { // Osama
+        return (x >= 0);
+    }
+
+    public Admin(string name, string password) { // Malak
+        this.name = name;
+        this.password = password;
+    }
+
+    public void AddHotel(ref Database data) { // Malak
+        Console.WriteLine("Please enter Hotel's info : ");
+        Console.Write("Hotel name ");
+        string hotelName = Console.ReadLine();
+        Console.Write("class type (Three stars or Four stars or Five stars) ");
+        string classType = Console.ReadLine();
+        Console.Write("location ");
+        string location = Console.ReadLine();
+        Console.Write("daily cost with breakfast ");
+        double dailyCostwithBreakfast = Convert.ToDouble(Console.ReadLine());
+        Console.Write("daily cost with all meals ");
+        double dailyCostwithAll = Convert.ToDouble(Console.ReadLine());
+        Console.Write("number of rooms ");
+        int numOfrooms = Convert.ToInt32(Console.ReadLine());
+        Console.Write("total income ");
+        double hotelIncome = Convert.ToDouble(Console.ReadLine());
+        Console.Write("enter discont if exists. Otherwise, enter 0 : ");
+        double discount = Convert.ToDouble(Console.ReadLine());
+
+        if (classType != "Three stars" && classType != "Four stars" && classType != "Five stars") {
+            Console.WriteLine("Invalid class type");
+            return;
+        }
+
+        if (!Valid(dailyCostwithBreakfast) || !Valid(hotelIncome) || !Valid(discount) || !Valid(dailyCostwithAll) || !Valid((double)numOfrooms)) {
+            Console.WriteLine("Invalid Integer");
+            return;
+        }
+
+        if (data.hotels.Find(x => x.GetName() == hotelName) != null) {
+            Console.WriteLine("Hotel with such name already exist");
+            return;
+        }
+
+        Hotel tmp = new Hotel(hotelName, classType, location, dailyCostwithBreakfast, dailyCostwithAll, numOfrooms, hotelIncome, discount);
+        data.hotels.Add(tmp);
+        data.StoreHotels();
+
+        Console.WriteLine("Hotel added successfully");
+    }
+
+    public void ViewHotels(ref Database data) { // Malak
+        data.LoadHotels();
+        foreach (Hotel h in data.hotels) {
+            Console.WriteLine(h);
+        }
+    }
+
+    public void AddCustomer(ref Database data) { // Malak
+        Console.WriteLine("Please enter customer's info : ");
+        Console.Write("Name ");
+        string name = Console.ReadLine(); 
+        Console.Write("Password ");
+        string password = Console.ReadLine();    
+        Console.Write("Credit ");
+        double credit = Convert.ToDouble(Console.ReadLine());
+
+        if (data.customers.Find(x => x.GetName() == name) != null) {
+            Console.WriteLine("Customer with such name already exist");
+            return;
+        }
+
+        if (!Valid(credit)) {
+            Console.WriteLine("Invalid credit value");
+            return;
+        }
+
+        Customer tmp = new Customer(name, password, credit);
+        data.customers.Add(tmp);
+
+        data.StoreCustomers();
+
+        Console.WriteLine("Customer added successfully");
+    }
+
+    public void ViewCustomers(ref Database data) { // Malak
+        data.LoadCustomers();
+        foreach (Customer c in data.customers) {
+            Console.WriteLine(c);
+        }        
+    }
+
+    public void ViewBookings(ref Database data) { // Malak
+        data.LoadBookings();
+        foreach (Booking b in data.bookings) {
+            Console.WriteLine(b);
+        }
+    }
+    
+    public void ViewBookingsRelatedToSpecificHotel(ref Database data) { // Osama
+        Console.WriteLine("Enter hotel's name");
+        string hotelName = Console.ReadLine();
+     
+        if (data.hotels.Find(x => x.GetName() == hotelName) == null) {
+            Console.WriteLine("Hotel does not exist");
+            return;
+        }
+
+        foreach (Booking b in data.bookings) {
+            if (b.GetHotelName() == hotelName) {
+                Console.WriteLine(b);
+            }
+        }
+    }  
+
+    public void UpdateHotel(ref Database data) { // Malak
+        Console.WriteLine("Please enter the following info : ");
+        Console.Write("Hotel name : ");
+        name = Console.ReadLine();
+     
+        if (data.hotels.Find(x => x.GetName() == name) == null) {
+            Console.WriteLine("Hotel does not exist");
+            return;
+        }
+
+        Console.Write("Daily cost with breakfast : ");
+        double dailyCostwithBreakfast = Convert.ToDouble(Console.ReadLine());
+        Console.Write("Daily cost with all meals : ");
+        double dailyCostwithAll = Convert.ToDouble(Console.ReadLine());
+        Console.Write("Number of rooms : ");
+        int numOfrooms = Convert.ToInt32(Console.ReadLine());
+        Console.Write("Discount if exists. Otherwise enter 0 : ");
+        double discount = Convert.ToDouble(Console.ReadLine());
+
+        if (!Valid(dailyCostwithBreakfast) || !Valid(discount) || !Valid(dailyCostwithAll) || !Valid((double)numOfrooms)) {
+            Console.WriteLine("Invalid Integer");
+            return;
+        }
+
+        for (int i = 0; i < data.hotels.Count; i++) {
+            if (data.hotels[i].GetName() == name) {
+                data.hotels[i].Update(dailyCostwithBreakfast, dailyCostwithAll, numOfrooms, discount);
+                break;
+            }
+        }
+
+        data.StoreHotels();
+        Console.WriteLine("Hotel updated sucessfully");
+    }
+
+    public void DeleteHotel(ref Database data) { // Osama
+        List<Hotel> tmp = new List<Hotel> ();
+
+        foreach (Hotel h in data.hotels) {
+            if (h.GetTotalIncome() >= 2000) {
+                tmp.Add(h);
+            }
+        }
+
+        data.hotels.Clear();
+
+        foreach (Hotel h in tmp) {
+            data.hotels.Add(h);
+        }
+
+        data.StoreHotels();
+        Console.WriteLine("Hotels with income less than 2000 income were deleted");
+    }
+
+
+}
+
+
+[Serializable]
+class Customer { // Lina
+    string name;
+    string password;
+    double credit;
+
+    public Customer(string name, string password, double credit) {
+        this.name = name;
+        this.password = password;
+        this.credit = credit;
+    }
+
+    bool Valid(double x) {
+        return (x >= 0);
+    }
+
+    public string GetName() {
+        return name;
+    }
+
+    public string GetPassword() {
+        return password;
+    }
+
+    public void MakeBooking(ref Database data) {
+        Console.WriteLine("Please enter the following info : ");
+        Console.Write("class type (Three stars or Four stars or Five stars) : ");
+        string classType = Console.ReadLine();   
+
+        if (classType != "Three stars" && classType != "Four stars" && classType != "Five stars") {
+            Console.WriteLine("Invalid class type");
+            return;
+        }
+
+        Console.Write("Location : ");
+        string location = Console.ReadLine();
+        
+        foreach (Hotel h in data.hotels) {
+            if (h.GetClassification() == classType && h.GetLocation() == location) {
+                Console.WriteLine(h);
+            }
+        }
+
+        Console.Write("Choose a hotel and enter it's name : ");
+        string hotelName = Console.ReadLine();
+     
+        Hotel NeededHotel = data.hotels.Find(x => x.GetName() == hotelName); 
+        if (NeededHotel == null) {
+            Console.WriteLine("Hotel does not exist");
+            return;
+        }
+
+        Console.WriteLine("The Daily Cost for one room with a breakfast is {0}", NeededHotel.GetDailyCostWithBreakfast());
+        Console.WriteLine("The Daily Cost for one room with a all meals is {0}", NeededHotel.GetDailyCostWithAll());
+        Console.WriteLine("The number of available rooms are {0}", NeededHotel.GetNumberOfRooms());
+
+        Console.Write("Number of rooms you eant to book : ");
+        int numofRooms = Convert.ToInt32(Console.ReadLine());
+        Console.Write("Number of days you eant to book : ");
+        int numOfDays = Convert.ToInt32(Console.ReadLine());
+        Console.WriteLine("Type of meals : ");
+        Console.WriteLine("If you want all meaals enter A.");
+        Console.WriteLine("If you want just a breakfast enter B");
+        Console.Write("Enter Your Choice : ");
+        char typeOfMeals = Convert.ToChar(Console.ReadLine());
+
+        if (!Valid(numofRooms) || !Valid(numOfDays)) {
+            Console.WriteLine("You entered an invalid numbers");
+            return;
+        }
+
+        if (numofRooms > NeededHotel.GetNumberOfRooms()) {
+            Console.WriteLine("Number of rooms entered is not available");
+            return;
+        } 
+
+        if (typeOfMeals != 'A' && typeOfMeals != 'B') {
+            Console.WriteLine("Invalid type of meals");
+            return;
+        }
+
+        double TotalCost = numofRooms * numOfDays;
+        if (typeOfMeals == 'A') TotalCost *= NeededHotel.GetDailyCostWithAll();
+        else TotalCost *= NeededHotel.GetDailyCostWithBreakfast();
+
+        
+        TotalCost -= TotalCost * NeededHotel.GetDiscount();
+        
+
+        Console.Write("Enter a special ID for your booking : ");
+        int ID = Convert.ToInt32(Console.ReadLine());
+        if (data.bookings.Find(x => x.GetID() == ID) != null) {
+            Console.WriteLine("Entered ID is already used");
+            return;
+        }
+
+        for (int i = 0; i < data.hotels.Count; i++) {
+            if (data.hotels[i].GetName() == hotelName) {
+                data.hotels[i].SetNumofRooms(data.hotels[i].GetNumberOfRooms() - numofRooms);
+                break;
+            }
+        }
+        data.StoreHotels();
+
+        Booking newBooking = new Booking(ID, name, NeededHotel.GetName(), false, numofRooms, numOfDays, typeOfMeals, TotalCost);
+        data.bookings.Add(newBooking);
+        data.StoreBookings();
+
+        Console.WriteLine("Booking has been added succussfully");
+    }
+
+    public void CancelBooking(ref Database data) {
+        Console.Write("Enter Booking ID :");
+        int ID = Convert.ToInt32(Console.ReadLine());
+
+        if (!Valid(ID)) {
+            Console.WriteLine("ID entered is not Valid");
+            return;
+        }
+
+        Booking bToCancel = data.bookings.Find(x => x.GetID() == ID);
+        if (bToCancel == null) {
+            Console.WriteLine("Entered ID is not used");
+            return;
+        }
+
+        for (int i = 0; i < data.hotels.Count; i++) {
+            if (data.hotels[i].GetName() == bToCancel.GetHotelName()) {
+                data.hotels[i].SetNumofRooms(data.hotels[i].GetNumberOfRooms() + bToCancel.GetNumOfRooms());
+                break;
+            }
+        }
+
+        data.bookings.Remove(bToCancel);
+        data.StoreHotels();
+        data.StoreBookings();
+    }
+    
+    public void PayForBooking(ref Database data) {
+        bool found = false;
+        foreach (Booking b in data.bookings) {
+            if (b.GetCustomerName() == name && b.GetStatus() == false) {
+                found = true;
+                Console.WriteLine(b);
+            }
+        } 
+
+        if (!found) {
+            Console.WriteLine("You have no unpaid bookings");
+            return;
+        }
+
+        Console.Write("Please choose one of your unpaid bookings : ");
+        int ID = Convert.ToInt32(Console.ReadLine());
+
+        if (!Valid(ID)) {
+            Console.WriteLine("ID entered is not Valid");
+            return;
+        }
+
+        found = false;
+        for (int i = 0; i < data.bookings.Count; i++) {
+            if (data.bookings[i].GetID() == ID) {
+                found = true;
+
+                if (credit < data.bookings[i].GetBookingCost()) {
+                    Console.WriteLine("You don't have enough cash");
+                    return;
+                }
+                credit -= data.bookings[i].GetBookingCost();
+
+                string hotelName = data.bookings[i].GetHotelName();
+                for (int j = 0; j < data.hotels.Count; j++) {
+                    if (data.hotels[j].GetName() == hotelName) {
+                        data.hotels[j].IncreaseTotalIncome(data.bookings[i].GetBookingCost());
+                        break;
+                    }
+                }
+
+                data.bookings[i].SetCompleted();
+                data.StoreAll();
+            }
+        }
+
+        if (!found) {
+            Console.WriteLine("Entered ID is not used");
+            return;
+        }
+    }
+
+    public void ViewMyBookings(ref Database data) {
+        foreach (Booking b in data.bookings) {
+            if (b.GetCustomerName() == name) {
+                Console.WriteLine(b);
+            }
+        }
+    }
+
+    public override string ToString() {
+        return "Customer : " + name + "Password : " + password + "Credit : " + credit;
+    }
+}
+
+
+[Serializable]
+class Hotel { // Malak
+    string name;
+    string classification;
+    string location;
+    double dailyCostWithBreakfast;
+    double dailyCostWithAllMeals;
+    int numberOfRooms;
+    double totalIncome;
+    double discount;
+
+    public Hotel(string name, string classi, string location, double dc, double dc2, int num, double total, double dis) {
+        this.name = name;
+        this.classification = classi;
+        this.location = location;
+        this.dailyCostWithAllMeals = dc;
+        this.dailyCostWithBreakfast = dc2;
+        this.numberOfRooms = num;
+        this.totalIncome = total;
+        this.discount = dis;
+    }
+
+    public string GetName() {
+        return name;
+    }
+
+    public double GetTotalIncome() {
+        return totalIncome;
+    }
+
+    public string GetClassification() {
+        return classification;
+    }
+
+    public string GetLocation() {
+        return location;
+    }
+
+    public double GetDailyCostWithBreakfast() {
+        return dailyCostWithBreakfast;
+    }
+
+    public double GetDailyCostWithAll() {
+        return dailyCostWithAllMeals;
+    }
+
+    public int GetNumberOfRooms() {
+        return numberOfRooms;
+    }
+
+    public double GetDiscount() {
+        return discount;
+    }
+
+    public void SetNumofRooms(int x) {
+        numberOfRooms = x;
+    }
+
+    public void IncreaseTotalIncome(double x) {
+        totalIncome += x;
+    }
+
+    // public void increasDiscount(double x) {
+        
+    // }
+
+    public void Update(double dailyCost1, double dailyCost2, int numOfRooms, double discount) {
+        this.dailyCostWithBreakfast = dailyCost1;
+        this.dailyCostWithAllMeals = dailyCost2;
+        this.numberOfRooms = numOfRooms;
+        this.discount = discount;
+    }
+
+    public override string ToString() {
+        return "Neme " + name + "Classification : " + classification + " location : " + location + " Daily Cost With breakfast " 
+         + dailyCostWithBreakfast + " Daily cost for all " + dailyCostWithAllMeals + " number of availble room " + numberOfRooms
+         + " total income " + totalIncome + " discount " + discount;
+    }
+}
+
+
+[Serializable]
+class Booking { // Lina
+    int ID;
+    string customerName;
+    string hotelName;
+    bool status;
+    int numOfRooms;
+    int numOfDays;
+    char typeOfMeals;
+    double bookingsCost;
+
+    public Booking(int Id, string c, string h, bool st, int num1, int num2, char t, double b) {
+        this.ID = Id;
+        this.customerName = c;
+        this.hotelName = h;
+        this.status = st;
+        this.numOfRooms = num1;
+        this.numOfDays = num2;
+        this.typeOfMeals = t;
+        this.bookingsCost = b;
+    }
+
+    public string GetHotelName() {
+        return hotelName;
+    }
+
+    public string GetCustomerName() {
+        return customerName;
+    }
+
+    public int GetID() {
+        return ID;
+    }
+
+    public int GetNumOfRooms() {
+        return numOfRooms;
+    }
+
+    public bool GetStatus() {
+        return status;
+    }
+
+    public double GetBookingCost() {
+        return bookingsCost;
+    }
+
+    public void SetCompleted() {
+        status = true;
+    }
+
+    public override string ToString() {
+        return "Booking " + ID + ", Customer : " + customerName + ", in " + hotelName + " Status : " + status + " number of rooms"
+         + numOfRooms + " Number of days " + numOfRooms + "type of meals " + typeOfMeals + "bookingsCost " + bookingsCost;
+    }
+}
+
+
+class Program {
+    static void GeneralMenu() {
+        Console.WriteLine("1) Login as Administrator.");
+        Console.WriteLine("2) Login as Customer.");
+        Console.WriteLine("3) Exit");
+        Console.Write("Please Enter Your Choice: ");
+    }
+
+    static void AdminMenu() {
+        Console.WriteLine("***************************");
+        Console.WriteLine("1) Add hotel to the system.");
+        Console.WriteLine("2) Add customer to the system.");
+        Console.WriteLine("3) View all hotels");
+        Console.WriteLine("4) View all customers.");
+        Console.WriteLine("5) View all bookings.");
+        Console.WriteLine("6) View booking that are related to a specific hotel.");
+        Console.WriteLine("7) Update hotel information.");
+        Console.WriteLine("8) Delete a hotel from the system.");
+        Console.WriteLine("9) Logout.");     
+        Console.WriteLine("***************************");
+        Console.Write("Please Enter Your Choice: "); 
+    }
+
+    static void CustomerMenu() {
+        Console.WriteLine("***************************");
+        Console.WriteLine("1) Make Booking.");
+        Console.WriteLine("2) Cancel Booking.");
+        Console.WriteLine("3) View My Bookings.");
+        Console.WriteLine("4) Pay for a booking.");
+        Console.WriteLine("5) Logout.");
+        Console.WriteLine("***************************");
+        Console.Write("Please Enter Your Choice: ");        
+    }
+
+    static void Main() {
+        Database data = new Database();
+        data.LoadAll();
+        Admin a = new Admin("admin", "111");
+
+        while (true) {
+            GeneralMenu();
+            int choice = Convert.ToInt32(Console.ReadLine());
+            if (choice == 1) {
+                Console.Write("Enter Username : ");
+                string username = Console.ReadLine(); 
+                Console.Write("Enter Password : ");
+                string password = Console.ReadLine();
+
+                if (username == "admin" && password == "111") {
+                    while (true) {
+                        AdminMenu();
+                        choice = Convert.ToInt32(Console.ReadLine());
+                        if (choice == 1) a.AddHotel(ref data);
+                        else if (choice == 2) a.AddCustomer(ref data);
+                        else if (choice == 3) a.ViewHotels(ref data);
+                        else if (choice == 4) a.ViewCustomers(ref data);
+                        else if (choice == 5) a.ViewBookings(ref data);
+                        else if (choice == 6) a.ViewBookingsRelatedToSpecificHotel(ref data);
+                        else if (choice == 7) a.UpdateHotel(ref data);
+                        else if (choice == 8) a.DeleteHotel(ref data);
+                        else if (choice == 9) break; // logout
+                    }
+                }
+                else {
+                    Console.WriteLine("Invalid credentials");
+                }
+            }
+            else if (choice == 2) {
+                Console.Write("Enter Username : ");
+                string username = Console.ReadLine(); 
+                Console.Write("Enter Password : ");
+                string password = Console.ReadLine(); 
+
+                bool found = new bool();
+                found = false;
+
+                for (int i = 0; i < data.customers.Count; i++) {
+                    if (data.customers[i].GetName() == username && data.customers[i].GetPassword() == password) {
+                        found = true;
+                        while (true) {
+                            CustomerMenu();
+                            choice = Convert.ToInt32(Console.ReadLine());
+                            if (choice == 1) data.customers[i].MakeBooking(ref data);
+                            else if (choice == 2) data.customers[i].CancelBooking(ref data);
+                            else if (choice == 3) data.customers[i].ViewMyBookings(ref data);
+                            else if (choice == 4) data.customers[i].PayForBooking(ref data);
+                            else if (choice == 5) break;
+                        }
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    Console.WriteLine("Invalid credentials");
+                }
+            }
+            else if (choice == 3) {
+                break;
+            }
+            else {
+                Console.WriteLine("Invalid choice :))");
+            }
+        }
+    }
+}
